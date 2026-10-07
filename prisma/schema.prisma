@@ -1,0 +1,345 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  STUDENT
+  RECRUITER
+  TPO
+  ALUMNI
+}
+
+enum ApplicationStatus {
+  APPLIED
+  OA_CLEARED
+  INTERVIEW_ROUND
+  SELECTED
+  REJECTED
+}
+
+enum JobType {
+  FTE
+  INTERNSHIP
+}
+
+model Tenant {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  students           Student[]
+  companies          Company[]
+  auditLogs          AuditLog[]
+  sessions           Session[]
+  featureFlags       FeatureFlag[]
+  analyticsSnapshots AnalyticsSnapshot[]
+}
+
+model Student {
+  id                    String             @id @default(uuid())
+  tenantId              String
+  studentId             String             @unique // VJTI Roll Number
+  name                  String
+  email                 String             @unique
+  passwordHash          String
+  encryptedPhone        String
+  encryptedPersonalEmail String
+  cgpa                  Float
+  branch                String             // CS, IT, EXTC, MECH
+  skills                String[]
+  codingScore           Int                @default(0)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  deletedAt             DateTime?
+
+  tenant                Tenant             @relation(fields: [tenantId], references: [id])
+  applications          Application[]
+  preferences           UserPreference?
+  bookmarks             Bookmark[]
+  readinessHistory      ReadinessHistory[]
+  passwordReset         PasswordReset?
+  resumes               Resume[]
+
+  @@index([tenantId, createdAt])
+  @@index([studentId, createdAt])
+}
+
+model UserPreference {
+  id        String   @id @default(uuid())
+  studentId String   @unique
+  theme     String   @default("dark")
+  language  String   @default("en")
+  layout    String   @default("compact")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+model PasswordReset {
+  id        String    @id @default(uuid())
+  studentId String    @unique
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+model Company {
+  id          String             @id @default(uuid())
+  tenantId    String
+  name        String
+  industry    String?
+  description String?            @default("Enterprise recruiter partner.")
+  visitCount  Int                @default(0)
+  trustScore  Float              @default(5.0)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  deletedAt   DateTime?
+
+  tenant          Tenant             @relation(fields: [tenantId], references: [id])
+  jobs            Job[]
+  sentiment       StudentSentiment[]
+  vaultItems      InterviewVault[]
+  placementEvents PlacementEvent[]
+
+  @@index([tenantId, createdAt])
+  @@index([name])
+}
+
+model Job {
+  id             String           @id @default(uuid())
+  tenantId       String
+  companyId      String
+  title          String
+  description    String
+  minCgpa        Float
+  requiredSkills String[]
+  packageLpa     Float
+  type           JobType          @default(FTE)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  deletedAt      DateTime?
+
+  company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  applications    Application[]
+  bookmarks       Bookmark[]
+  placementEvents PlacementEvent[]
+
+  @@index([tenantId, createdAt])
+  @@index([companyId, tenantId])
+}
+
+model Application {
+  id              String            @id @default(uuid())
+  tenantId        String
+  studentId       String
+  jobId           String
+  status          ApplicationStatus @default(APPLIED)
+  timelineHistory Json              // Array of { status, timestamp, note }
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  job     Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([studentId, createdAt])
+  @@index([jobId, createdAt])
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  studentId String
+  jobId     String?
+  vaultId   String?
+  createdAt DateTime @default(now())
+
+  student   Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  job       Job?            @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  vaultItem InterviewVault? @relation(fields: [vaultId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, jobId, vaultId])
+}
+
+model SavedSearch {
+  id          String   @id @default(uuid())
+  creatorId   String // Recruiter or TPO ID
+  role        Role
+  name        String
+  queryParams Json // Extracted query constraints
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FeatureFlag {
+  id        String   @id @default(uuid())
+  tenantId  String
+  key       String   @unique
+  isEnabled Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+}
+
+model InterviewVault {
+  id         String     @id @default(uuid())
+  tenantId   String
+  companyId  String
+  roleName   String
+  topic      String // e.g. Trees, DP, OS
+  question   String
+  difficulty String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  deletedAt  DateTime?
+
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  bookmarks Bookmark[]
+
+  @@index([tenantId, createdAt])
+  @@index([companyId, createdAt])
+  @@index([companyId, tenantId])
+}
+
+model StudentSentiment {
+  id                  String    @id @default(uuid())
+  tenantId            String
+  companyId           String
+  oaDifficulty        Int // 1 to 5
+  interviewDifficulty Int // 1 to 5
+  overallSentiment    String // positive, neutral, negative
+  feedbackText        String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([companyId, tenantId])
+}
+
+model AuditLog {
+  id        String    @id @default(uuid())
+  tenantId  String
+  actorId   String
+  action    String
+  metadata  Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, createdAt])
+}
+
+model Session {
+  id           String    @id @default(uuid())
+  tenantId     String
+  userId       String
+  userAgent    String // Device: e.g. "Windows Chrome"
+  ipAddress    String
+  refreshToken String    @unique
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, createdAt])
+}
+
+model ReadinessHistory {
+  id         String   @id @default(uuid())
+  studentId  String
+  score      Float
+  recordedAt DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, recordedAt])
+}
+
+model AnalyticsSnapshot {
+  id        String   @id @default(uuid())
+  tenantId  String
+  period    String // DAILY, WEEKLY, MONTHLY
+  data      Json // Pre-calculated aggregates
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, period, createdAt])
+}
+
+model Resume {
+  id          String    @id @default(uuid())
+  tenantId    String
+  studentId   String
+  filename    String
+  version     Int       @default(1)
+  size        Int       // file size in bytes
+  hash        String    // SHA-256 hash
+  content     Bytes     // Raw file bytes
+  skills      String[]  // Associated skills list
+  education   String?   // Associated education string
+  projects    String[]  // Associated projects list
+  isActive    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, studentId])
+  @@index([studentId, isActive])
+}
+
+model PlacementEvent {
+  id        String   @id @default(uuid())
+  tenantId  String
+  title     String
+  type      String   // OA, INTERVIEW, DEADLINE, DRIVE, OFFER
+  date      DateTime
+  companyId String?
+  jobId     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  job     Job?     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, date])
+}
+
+model AIResult {
+  id        String   @id @default(uuid())
+  tenantId  String
+  studentId String
+  jobId     String   @unique // BullMQ job ID used for polling
+  type      String   // RESUME_ANALYZE | SKILL_GAP | ROADMAP | VAULT_RAG | COPILOT
+  status    String   @default("PENDING") // PENDING | DONE | FAILED
+  payload   Json?    // Input sent to AI service
+  result    Json?    // AI response stored here
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, studentId, createdAt])
+  @@index([jobId])
+}
