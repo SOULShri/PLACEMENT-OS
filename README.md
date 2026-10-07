@@ -1,6 +1,6 @@
 # PlacementOS
 
-> **Enterprise-grade campus placement portal built for VJTI Mumbai.**
+> **Enterprise-grade campus placement portal**
 > Multi-tenant · RBAC · AI Intelligence · Resume Management · Company Analytics
 
 [![Tests](https://img.shields.io/badge/tests-59%20passing-brightgreen)](src/lib/__tests__)
