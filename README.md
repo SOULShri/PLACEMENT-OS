@@ -360,5 +360,3 @@ npm run test
 | [viva-prep.md](docs/viva-prep.md) | 13 technical Q&As for interviews and vivas |
 
 ---
-
-]
