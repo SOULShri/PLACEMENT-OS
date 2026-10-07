@@ -361,36 +361,4 @@ npm run test
 
 ---
 
-## Interview Preparation
-
-See [docs/viva-prep.md](docs/viva-prep.md) for detailed answers to:
-
-- Why Next.js? Why Prisma? Why PostgreSQL? Why Redis? Why BullMQ?
-- Why ChromaDB? Why Multi-tenancy? Why Audit Logs?
-- Why Repository Pattern? Why RAG instead of fine-tuning?
-- How does Refresh Token Rotation work?
-- How does Tenant Isolation work?
-- How does Company Intelligence work?
-
----
-
-## Resume Entry
-
-```
-PlacementOS — Full-Stack SaaS Placement Portal                        
-| Next.js · TypeScript · PostgreSQL · Redis · FastAPI · ChromaDB
-
-• Engineered a multi-tenant placement portal serving 300+ students, 100 companies,
-  and 500+ jobs with strict tenant data isolation using JWT-embedded tenantId
-• Implemented Refresh Token Rotation (RTR) with replay attack detection — 
-  auto-invalidates all sessions on stale token reuse
-• Built binary-level resume validator scanning PDF/DOCX for magic headers,
-  MZ executable signatures, and embedded JavaScript injection attacks
-• Designed Company Intelligence Analytics Engine computing selection rates, 
-  median packages, CGPA distributions, and skill trends from 2000+ applications
-• Integrated AI Intelligence Layer via BullMQ → FastAPI → ChromaDB pipeline:
-  ATS scoring, skill gap analysis, RAG-based interview vault, placement copilot
-• 59 unit/integration tests, 0 ESLint errors, production build with 30 routes
-```
-
----
+]
