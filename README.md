@@ -377,8 +377,8 @@ See [docs/viva-prep.md](docs/viva-prep.md) for detailed answers to:
 ## Resume Entry
 
 ```
-PlacementOS — Full-Stack SaaS Placement Portal                        Jun 2025
-VJTI Mumbai | Next.js · TypeScript · PostgreSQL · Redis · FastAPI · ChromaDB
+PlacementOS — Full-Stack SaaS Placement Portal                        
+| Next.js · TypeScript · PostgreSQL · Redis · FastAPI · ChromaDB
 
 • Engineered a multi-tenant placement portal serving 300+ students, 100 companies,
   and 500+ jobs with strict tenant data isolation using JWT-embedded tenantId
@@ -394,7 +394,3 @@ VJTI Mumbai | Next.js · TypeScript · PostgreSQL · Redis · FastAPI · ChromaD
 ```
 
 ---
-
-## License
-
-MIT © 2025 Sanket Bhat, VJTI Mumbai
